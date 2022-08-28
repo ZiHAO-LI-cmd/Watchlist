@@ -69,6 +69,35 @@ def index():  # 返回值作为响应的主体，默认会被浏览器作为 HTM
     return render_template('index.html', movies=movies)
 
 
+@app.route('/movie/edit/<int:movie_id>', methods=['GET', 'POST'])
+def edit(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+
+    if request.method == 'POST':    # 处理编辑表单的提交请求
+        title = request.form['title']
+        year = request.form['year']
+
+        if not title or not year or len(year) !=4 or len(title) > 60:
+            flash('Invalid input.')
+            return redirect(url_for('edit', movie_id=movie_id))     # 重定向回对应的编辑页面
+
+        movie.title = title
+        movie.year = year
+        db.session.commit()
+        flash('Item updated.')
+        return redirect(url_for('index'))   # 重定向回主页
+
+    return render_template('edit.html', movie=movie)    # 传入被编辑的电影记录
+
+
+@app.route('/movie/delete/<int:movie_id>', methods=['POST'])    # 限定只接受 POST 请求
+def delete(movie_id):
+    movie = Movie.query.get_or_404(movie_id)
+    db.session.delete(movie)
+    db.session.commit()
+    flash('Item deleted.')
+    return redirect(url_for('index'))
+
 @app.route('/user/<name>')
 def user_page(name):  # 在视图函数里获取到<name>
     return f'User: {escape(name)}'  # escape() 函数对 name 变量进行转义处理
