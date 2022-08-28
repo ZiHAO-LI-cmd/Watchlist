@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, flash
 from markupsafe import escape
 from flask import url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -16,6 +16,7 @@ else:  # 否则使用四个斜线
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型修改的监控
+app.config['SECRET_KEY'] = 'dev'  # 等同于 app.secret_key = 'dev'
 # 在扩展类实例化前加载配置
 db = SQLAlchemy(app)  # 初始化扩展，传入程序实例 app
 
@@ -42,12 +43,27 @@ def initdb(drop):
     click.echo('Initialized database')  # 输出提示信息
 
 
-@app.route('/')  # 为这个函数绑定对应的 URL
+@app.route('/', methods=['GET', 'POST'])  # 为这个函数绑定对应的 URL
 @app.route('/index')
 @app.route('/home')
 def index():  # 返回值作为响应的主体，默认会被浏览器作为 HTML 格式解析
     # return 'Hello'
     # return '<h1>Hello Totoro!</h1><img src="http://helloflask.com/totoro.gif">'
+    if request.method == 'POST':
+        # 获取表单数据
+        title = request.form.get('title')   # 传入表单对应输入字段的 name 值
+        year = request.form.get('year')
+        # 验证数据
+        if not title or not year or len(year) != 4 or len(title) > 60:
+            flash('Invalid input.')     # 显示错误提示
+            return redirect(url_for('index'))   # 重定向回主页
+        # 保存表单数据到数据库
+        movie = Movie(title=title, year=year)
+        db.session.add(movie)
+        db.session.commit()
+        flash('Item created.')  # 显示成功创建的提示
+        return redirect(url_for('index'))
+
     user = User.query.first()  # 读取用户记录
     movies = Movie.query.all()  # 读取所有电影记录
     return render_template('index.html', movies=movies)
