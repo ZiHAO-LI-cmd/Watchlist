@@ -148,7 +148,7 @@ def index():  # 返回值作为响应的主体，默认会被浏览器作为 HTM
     # return 'Hello'
     # return '<h1>Hello Totoro!</h1><img src="http://helloflask.com/totoro.gif">'
     if request.method == 'POST':
-        if not current_user.is_authenticaed:
+        if not current_user.is_authenticated:
             return redirect(url_for('index'))
         # 获取表单数据
         title = request.form.get('title')  # 传入表单对应输入字段的 name 值
